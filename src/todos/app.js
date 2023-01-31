@@ -7,6 +7,8 @@ import {renderTodos} from "./helpers";
 const elementIds = {
   TodoList: ".todo-list",
   NewTodoInput: "#new-todo-input",
+  dataId: "[data-id]",
+  btnDestroy: "destroy",
 };
 
 /**
@@ -29,8 +31,10 @@ export const App = (elementId) => {
 
   // Referencias HTML
   const newDescriptionInput = document.querySelector(elementIds.NewTodoInput);
+  const todoListUL = document.querySelector(elementIds.TodoList);
 
   // Listeners
+  // new ToDo
   newDescriptionInput.addEventListener("keyup", (event) => {
     if (event.keyCode !== 13) return;
     if (event.target.value.trim().length === 0) return;
@@ -38,5 +42,23 @@ export const App = (elementId) => {
     todoStore.addTodo(event.target.value);
     displayTodos();
     event.target.value = "";
+  });
+
+  // toggle ToDo
+  todoListUL.addEventListener("click", (event) => {
+    const elem = event.target.closest(elementIds.dataId);
+    todoStore.toggleTodo(elem.getAttribute("data-id"));
+    displayTodos();
+  });
+
+  // delete ToDo
+  todoListUL.addEventListener("click", (event) => {
+    const isDestroyElem = event.target.className === elementIds.btnDestroy;
+
+    const elemDel = event.target.closest(elementIds.dataId);
+
+    if (!elemDel || !isDestroyElem) return;
+    todoStore.deleteTodo(elemDel.getAttribute("data-id"));
+    displayTodos();
   });
 };
