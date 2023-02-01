@@ -1,14 +1,17 @@
 // '?raw' = Vite lo importara en crudo
 import html from "./app.html?raw";
 
-import todoStore from "../store/todo.store";
-import {renderTodos} from "./helpers";
+import todoStore, {Filters} from "../store/todo.store";
+import {renderPendingTodos, renderTodos} from "./helpers";
 
 const elementIds = {
+  ClearCompletedButton: ".clear-completed",
   TodoList: ".todo-list",
   NewTodoInput: "#new-todo-input",
   dataId: "[data-id]",
-  btnDestroy: "destroy",
+  ButtonDestroy: "destroy",
+  TodoFilters: ".filtro",
+  PendingCountLabel: "#pending-count",
 };
 
 /**
@@ -19,9 +22,14 @@ export const App = (elementId) => {
   const displayTodos = () => {
     const todos = todoStore.getTodos(todoStore.getCurrentFilter());
     renderTodos(elementIds.TodoList, todos);
+    updatePendingCount();
   };
 
-  // Cuando la función App() se llama
+  const updatePendingCount = () => {
+    renderPendingTodos(elementIds.PendingCountLabel);
+  };
+
+  // when App() function is call
   (() => {
     const app = document.createElement("div");
     app.innerHTML = html;
@@ -29,9 +37,13 @@ export const App = (elementId) => {
     displayTodos();
   })();
 
-  // Referencias HTML
+  // References HTML
   const newDescriptionInput = document.querySelector(elementIds.NewTodoInput);
   const todoListUL = document.querySelector(elementIds.TodoList);
+  const clearCompletedButton = document.querySelector(
+    elementIds.ClearCompletedButton
+  );
+  const filtersLIs = document.querySelectorAll(elementIds.TodoFilters);
 
   // Listeners
   // new ToDo
@@ -46,19 +58,48 @@ export const App = (elementId) => {
 
   // toggle ToDo
   todoListUL.addEventListener("click", (event) => {
-    const elem = event.target.closest(elementIds.dataId);
-    todoStore.toggleTodo(elem.getAttribute("data-id"));
+    const element = event.target.closest(elementIds.dataId);
+    todoStore.toggleTodo(element.getAttribute("data-id"));
     displayTodos();
   });
 
   // delete ToDo
   todoListUL.addEventListener("click", (event) => {
-    const isDestroyElem = event.target.className === elementIds.btnDestroy;
+    const isDestroyElement =
+      event.target.className === elementIds.ButtonDestroy;
 
-    const elemDel = event.target.closest(elementIds.dataId);
+    const elementDelete = event.target.closest(elementIds.dataId);
 
-    if (!elemDel || !isDestroyElem) return;
-    todoStore.deleteTodo(elemDel.getAttribute("data-id"));
+    if (!elementDelete || !isDestroyElement) return;
+    todoStore.deleteTodo(elementDelete.getAttribute("data-id"));
     displayTodos();
+  });
+
+  // delete all ToDos
+  clearCompletedButton.addEventListener("click", () => {
+    todoStore.deleteCompleted();
+    displayTodos();
+  });
+
+  // Filters
+  filtersLIs.forEach((element) => {
+    element.addEventListener("click", (element) => {
+      filtersLIs.forEach((el) => el.classList.remove("selected"));
+      element.target.classList.add("selected");
+
+      switch (element.target.text) {
+        case "Todos":
+          todoStore.setFilter(Filters.All);
+          break;
+        case "Pendientes":
+          todoStore.setFilter(Filters.Pending);
+          break;
+        case "Completados":
+          todoStore.setFilter(Filters.Completed);
+          break;
+      }
+
+      displayTodos();
+    });
   });
 };
